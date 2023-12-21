@@ -3,10 +3,47 @@ import { Button, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-n
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { useCallback } from 'react';
-
+import { ClerkProvider, SignedIn, SignedOut, useAuth } from '@clerk/clerk-expo';
+import LoginScreen from './src/screens/LoginScreen';
+import * as SecureStore from "expo-secure-store";
 
 SplashScreen.preventAutoHideAsync();
+
+const tokenCache = {
+  async getToken(key: string) {
+    try {
+      return SecureStore.getItemAsync(key);
+    } catch (err) {
+      return null;
+    }
+  },
+  async saveToken(key: string, value: string) {
+    try {
+      return SecureStore.setItemAsync(key, value);
+    } catch (err) {
+      return;
+    }
+  },
+};
+const SignOut = () => {
+  const { isLoaded,signOut } = useAuth();
+  if (!isLoaded) {
+    return null;
+  }
+  return (
+    <View>
+      <Button
+        title="Sign Out"
+        onPress={() => {
+          signOut();
+        }}
+      />
+    </View>
+  );
+};
+
 export default function App() {
+
   const [fontsLoaded] = useFonts({
     'Inter-ExtraBold': require('./assets/fonts/Inter-ExtraBold.ttf'),
     'Inter-Regular': require('./assets/fonts/Inter-Regular.ttf'),
@@ -21,69 +58,20 @@ export default function App() {
   if (!fontsLoaded) {
     return null;
   }
-  return (
-    <View style={styles.container} onLayout={onLayoutRootView}>
-      <View style={styles.heroSection}>
-        <Image
-          source={require("./assets/logo.png")}
-          style={styles.heroImage}
-        />
-        <Text style={styles.heroTitle}>
-          AppName
-        </Text>
-        <Text style={styles.heroText}>
-          Lorem ipsum, dolor sit amet consectetur adipisicing elit. Quibusdam cumque officia 
-        </Text>
-      </View>
-      <View style={styles.signInContainer}>
-        <Text style={{
-          fontFamily: "Inter-Medium",
-          opacity: 0.5
-        }}>Continue with</Text>
-        <View style={styles.signInButtonsContainer}>
-          <TouchableOpacity style={styles.socialButtonsContainer}>
-            <Image 
-              source={require("./assets/images/google_login.png")}
-              style={styles.socialButtons}
-            />
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.socialButtonsContainer, {
-            borderColor: "black",
-            borderWidth: 1.4
-          }]}>
-            <Image 
-              source={require("./assets/images/apple_login.png")}
-              style={styles.socialButtons}
-            />
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.socialButtonsContainer, {
-            borderColor: "#0033ff",
-            borderWidth: 1.4
-          }]}>
-            <Image 
-              source={require("./assets/images/facebook_login.png")}
-              style={styles.socialButtons}
-            />
-          </TouchableOpacity>
-        </View>
 
-        
-        <Text style={{
-          fontFamily: "Inter-Regular",
-          fontSize: 12,
-          marginTop: 16
-        }}>
-          By Continuing, you agree to our <Text style={{
-            fontFamily: "Inter-Medium",
-            textDecorationLine: "underline",
-          }}>
-            Terms & Conditions
-          </Text>
-           .
-        </Text>
+  return (
+    <ClerkProvider tokenCache={tokenCache} publishableKey={'pk_test_bGlnaHQtbGlvbi0zLmNsZXJrLmFjY291bnRzLmRldiQ'}>
+      <View style={styles.container} onLayout={onLayoutRootView}>
+        <SignedIn>
+          <Text>You are signed in</Text>
+          <SignOut/>
+        </SignedIn>
+        <SignedOut>
+          <LoginScreen />
+        </SignedOut>
+        <StatusBar style="auto" />
       </View>
-      <StatusBar style="auto" />
-    </View>
+    </ClerkProvider>
   );
 }
 
